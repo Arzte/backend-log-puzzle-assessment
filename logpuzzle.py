@@ -71,7 +71,6 @@ def download_images(img_urls, dest_dir):
         for filename in filename_list:
             file_handle.write(f"<img src=\"{filename}\">")
         file_handle.write("</body></html>")
-    pass
 
 
 def create_parser():
