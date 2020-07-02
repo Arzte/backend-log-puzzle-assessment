@@ -21,13 +21,29 @@ import urllib.request
 import argparse
 
 
+def get_sort_regex(string):
+    return re.search(r'(\w*)\.jpg', string).group(1)
+
+
 def read_urls(filename):
     """Returns a list of the puzzle URLs from the given log file,
     extracting the hostname from the filename itself, sorting
     alphabetically in increasing order, and screening out duplicates.
     """
-    # +++your code here+++
-    pass
+    hostname_regex = re.compile(r'_(\S*)')
+    hostname = hostname_regex.search(filename).group(1)
+    puzzle_urls = []
+    with open(filename, 'r') as file_handle:
+        url_regex = re.compile(r'GET (\S*puzzle\S*) ')
+        for line in file_handle:
+            match = url_regex.search(line)
+            if match:
+                puzzle_urls.append(f"http://{hostname}{match.group(1)}")
+
+    "Remove duplicates by using a set, then converting that set back to a list"
+    puzzle_urls = list(set(puzzle_urls))
+    puzzle_urls.sort(key=get_sort_regex)
+    return puzzle_urls
 
 
 def download_images(img_urls, dest_dir):
@@ -38,7 +54,23 @@ def download_images(img_urls, dest_dir):
     to show each local image file.
     Creates the directory if necessary.
     """
-    # +++your code here+++
+    if not os.path.exists(dest_dir):
+        os.makedirs(dest_dir)
+    print("Retrieving..")
+    filename_list = []
+    for count, img in enumerate(img_urls):
+        filename = f"{dest_dir}/img{count}.jpg"
+        urllib.request.urlretrieve(img, filename=filename)
+        filename_list.append(f"img{count}.jpg")
+
+    index = f"{dest_dir}/index.html"
+    if os.path.exists(index):
+        os.remove(index)
+    with open(index, "w") as file_handle:
+        file_handle.write("<html><body>")
+        for filename in filename_list:
+            file_handle.write(f"<img src=\"{filename}\">")
+        file_handle.write("</body></html>")
     pass
 
 
@@ -47,7 +79,8 @@ def create_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--todir',
                         help='destination directory for downloaded images')
-    parser.add_argument('logfile', help='apache logfile to extract urls from')
+    parser.add_argument(
+        'logfile', help='apache logfile to extract urls from')
 
     return parser
 
